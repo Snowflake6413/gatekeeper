@@ -90,7 +90,7 @@ def scan_all_members_idv(ack, respond, command):
     while True:
         result = app.client.conversations_members(channel=channel_id, cursor=cursor)
         members.extend(result["members"])
-        cursor = result.get("response_metadata", {}.get("next_cursor"))
+        cursor = result.get("response_metadata", {}).get("next_cursor")
         if not cursor:
             break
 
