@@ -79,7 +79,41 @@ def check_newbie_member_idv(event, say):
     elif result in ("needs_submission", "not_found", "rejected", "pending"):
         say(f"<@{user_id}> failed the IDV check.")
 
+@app.command("/scan")
+def scan_all_members_idv(ack, respond, command):
+    ack()
 
+    channel_id = command["channel_id"]
+    
+    members = []
+    cursor = None
+    while True:
+        result = app.client.conversations_members(channel=channel_id, cursor=cursor)
+        members.extend(result["members"])
+        cursor = result.get("response_metadata", {}.get("next_cursor"))
+        if not cursor:
+            break
+
+    passed = []
+    failed = []
+
+    for user_id in members:
+        response = requests.get(HCA_USERCHECK_URL, params={"slack_id" : user_id})
+        data = response.json()
+        result = data ["result"]
+
+
+        if result in ("verified_eligible", "verified_but_over_18"):
+            passed.append(user_id)
+        else:
+            failed.append(user_id)
+
+
+        respond(
+            text=f"Scan finished\n\n"
+            f"Passed: {len(passed)}\n"
+            f"Failed: {len(failed)}"
+        )
 
 
 
