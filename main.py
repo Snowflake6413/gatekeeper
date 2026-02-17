@@ -37,7 +37,7 @@ def ping_pongs(say, event):
     say(f"Pong! Latency: {lat}")
 
 @app.command("/gatekeeper_about")
-def what_is_this_help_me(ack, respond, commannd):
+def what_is_this_help_me(ack, respond, command):
     ack()
 
     about_blocks = [
@@ -108,12 +108,14 @@ def scan_all_members_idv(ack, respond, command):
         else:
             failed.append(user_id)
 
+    passed_list = "\n".join(f"• <@{uid}>" for uid in passed) or "None"
+    failed_list = "\n".join(f"• <@{uid}>" for uid in failed) or "None"
 
-        respond(
-            text=f"Scan finished\n\n"
-            f"Passed: {len(passed)}\n"
-            f"Failed: {len(failed)}"
-        )
+    respond(
+        text=f"Scan finished\n\n"
+        f"*Passed ({len(passed)}):*\n{passed_list}\n\n"
+        f"*Failed ({len(failed)}):*\n{failed_list}"
+    )
 
 
 
