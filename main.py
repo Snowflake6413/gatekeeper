@@ -26,6 +26,7 @@ sentry_sdk.init(
 
 # ---------- Slack Init ----------
 app=App(token=SLACK_BOT_TOKEN)
+print("Running!")
 # --------------------------------
 
 @app.event("app_mention")
@@ -79,7 +80,7 @@ def check_newbie_member_idv(event, say):
     elif result in ("needs_submission", "not_found", "rejected", "pending"):
         say(f"<@{user_id}> failed the IDV check.")
 
-@app.command("/scan")
+@app.command("/gatekeeper_scan")
 def scan_all_members_idv(ack, respond, command):
     ack()
 
@@ -95,26 +96,36 @@ def scan_all_members_idv(ack, respond, command):
             break
 
     passed = []
+    passed18 = []
     failed = []
 
     for user_id in members:
+
+        user_info = app.client.users_info(user=user_id)
+        if user_info["user"].get("is_bot"):
+            continue
+             # Since Slackbot is disabled in HC Slack (sadge), we wont need to check if Slackbot is in our channel.
         response = requests.get(HCA_USERCHECK_URL, params={"slack_id" : user_id})
         data = response.json()
         result = data ["result"]
 
 
-        if result in ("verified_eligible", "verified_but_over_18"):
+        if result in ("verified_eligible"):
             passed.append(user_id)
+        elif result in ("verified_but_over_18"):
+            passed18.append(user_id)
         else:
             failed.append(user_id)
 
     passed_list = "\n".join(f"• <@{uid}>" for uid in passed) or "None"
+    passed18_list = "\n".join(f"• <@{uid}>" for uid in passed18) or "_None_"
     failed_list = "\n".join(f"• <@{uid}>" for uid in failed) or "None"
 
     respond(
-        text=f"Scan finished\n\n"
-        f"*Passed ({len(passed)}):*\n{passed_list}\n\n"
-        f"*Failed ({len(failed)}):*\n{failed_list}"
+        text=f"Scan finished.\n\n"
+        f"*IDV Verified ({len(passed)}):*\n{passed_list}\n\n"
+        f"*IDV Verified but over 18 ({len(passed18)}):*\n{passed18_list}\n\n"
+        f"*Not IDV verified ({len(failed)}):*\n{failed_list}\n\n"
     )
 
 
