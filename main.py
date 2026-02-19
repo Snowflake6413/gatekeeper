@@ -80,11 +80,71 @@ def check_newbie_member_idv(event, say):
     elif result in ("needs_submission", "not_found", "rejected", "pending"):
         say(f"<@{user_id}> failed the IDV check.")
 
+
+@app.command("/gatekeeper_kick_non_idv")
+def kick_out_members(ack, respond, command):
+    ack()
+
+    channel_id = command["channel_id"]
+    invoker_user_id = command["user_id"]
+    target_id = command["text"].strip().strip("<@>").split("|")[0]
+
+    channel_info = app.client.conversations_info(channel=channel_id)
+    channelmanager = channel_info["channel"].get("creator")
+
+    if invoker_user_id != channelmanager:
+        respond("You are not the channel manager to run this command on this channel.")
+        return
+    
+
+    members = []
+    cursor = None
+    while True:
+        result = app.client.conversations_members(channel=channel_id, cursor=cursor)
+        members.extend(result["members"])
+        cursor = result.get("response_metadata", {}).get("next_cursor")
+        if not cursor:
+            break
+
+    kicked = []
+    for user_id in members:
+        user_info = app.client.users_info(user=user_id)
+        if user_info["user"].get("is_bot"):
+            continue
+
+        response = requests.get(HCA_USERCHECK_URL, params={"slack_id" : user_id})
+        data = response.json()
+        idv_result = data["result"]
+
+        if idv_result not in ("verified_eligible", "verified_but_over_18"):
+            try:
+                app.client.conversations_kick(channel=channel_id, user=user_id)
+                kicked.append(user_id)
+            except Exception as e:
+                print(f"Failed to kick {user_id}. {e}")
+
+        
+    kicked_list = "\n".join(f"• <@{uid}>" for uid in kicked) or "None"
+    respond(text=f"Kicked {len(kicked)} non-IDV verified member(s):\n{kicked_list}")
+
+
+
+
+
 @app.command("/gatekeeper_scan")
 def scan_all_members_idv(ack, respond, command):
     ack()
 
     channel_id = command["channel_id"]
+    invoker_user_id = command["user_id"]
+
+    channel_info = app.client.conversations_info(channel=channel_id)
+    channelmanager = channel_info["channel"].get("creator")
+
+    if invoker_user_id != channelmanager:
+        respond("You are not the channel manager to run this command on this channel.")
+        return
+
     
     members = []
     cursor = None
