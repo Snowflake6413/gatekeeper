@@ -106,6 +106,9 @@ def kick_out_members(ack, respond, command):
         if not cursor:
             break
 
+
+    
+
     kicked = []
     for user_id in members:
         user_info = app.client.users_info(user=user_id)
@@ -118,6 +121,12 @@ def kick_out_members(ack, respond, command):
 
         if idv_result not in ("verified_eligible", "verified_but_over_18"):
             try:
+                dm = app.client.conversations_open(users=user_id)
+                dm_channel = dm["channel"]["id"]
+                app.client.chat_postMessage(
+                    channel=dm_channel,
+                    text=f"<#{channel_id} :neocat:"
+                )          
                 app.client.conversations_kick(channel=channel_id, user=user_id)
                 kicked.append(user_id)
             except Exception as e:
