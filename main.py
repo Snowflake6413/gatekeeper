@@ -125,7 +125,7 @@ def kick_out_members(ack, respond, command):
                 dm_channel = dm["channel"]["id"]
                 app.client.chat_postMessage(
                     channel=dm_channel,
-                    text=f"<#{channel_id} :neocat:"
+                    text=f"You have been kicked from <#{channel_id}> since you are not IDV verified."
                 )          
                 app.client.conversations_kick(channel=channel_id, user=user_id)
                 kicked.append(user_id)
